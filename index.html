@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Puerpério</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a1a1a; min-height: 100vh; }
+  header { background: #1e3a5f; color: white; padding: 20px 30px; text-align: center; }
+  header h1 { font-size: 22px; margin-bottom: 4px; }
+  header p { font-size: 13px; opacity: 0.8; }
+  .quiz-container { max-width: 800px; margin: 30px auto; padding: 0 16px 60px; }
+  #startScreen { background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  #startScreen h2 { font-size: 20px; color: #1e3a5f; margin-bottom: 12px; }
+  #startScreen p { font-size: 14px; color: #555; margin-bottom: 24px; line-height: 1.6; }
+  .progress-bar-bg { background: #dde3ea; border-radius: 8px; height: 8px; margin-bottom: 8px; }
+  .progress-bar-fill { background: #2563eb; height: 8px; border-radius: 8px; transition: width 0.4s ease; }
+  .progress-label { font-size: 12px; color: #666; margin-bottom: 20px; }
+  .question-card { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .question-number { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #2563eb; letter-spacing: 1px; margin-bottom: 10px; }
+  .question-text { font-size: 15px; line-height: 1.65; color: #1a1a1a; margin-bottom: 22px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn { background: #f7f9fc; border: 2px solid #dde3ea; border-radius: 8px; padding: 12px 16px; text-align: left; font-size: 14px; cursor: pointer; transition: background 0.15s, border-color 0.15s; line-height: 1.5; }
+  .option-btn:hover:not(:disabled) { background: #e8f0fe; border-color: #2563eb; }
+  .option-btn.correct { background: #d1fae5; border-color: #16a34a; color: #166534; }
+  .option-btn.wrong { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
+  .option-btn:disabled { cursor: default; }
+  .explanation { display: none; background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 0 8px 8px 0; padding: 14px 16px; margin-top: 14px; font-size: 13px; line-height: 1.6; color: #166534; }
+  .explanation.show { display: block; }
+  .btn-next { display: none; margin-top: 18px; background: #2563eb; color: white; border: none; border-radius: 8px; padding: 12px 28px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-next:hover { background: #1d4ed8; }
+  .btn-next.show { display: inline-block; }
+  .btn-primary { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 14px 36px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-primary:hover { background: #1d4ed8; }
+  #resultScreen { display: none; background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .score-circle { width: 120px; height: 120px; border-radius: 50%; background: #1e3a5f; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 20px; }
+  .score-circle .score-num { font-size: 32px; font-weight: 700; }
+  .score-circle .score-denom { font-size: 13px; opacity: 0.8; }
+  #resultScreen h2 { font-size: 20px; color: #1e3a5f; margin-bottom: 10px; }
+  #resultScreen p { font-size: 14px; color: #555; margin-bottom: 24px; }
+  .stats-row { display: flex; justify-content: center; gap: 24px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat-box { background: #f7f9fc; border-radius: 8px; padding: 12px 20px; text-align: center; min-width: 90px; }
+  .stat-box .stat-val { font-size: 22px; font-weight: 700; }
+  .stat-box .stat-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+  .stat-box.green .stat-val { color: #16a34a; }
+  .stat-box.red .stat-val { color: #dc2626; }
+  .stat-box.blue .stat-val { color: #2563eb; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Puerpério</h1>
+  <p>Obstetrícia — Saúde da Mulher</p>
+</header>
+<div class="quiz-container">
+  <div id="startScreen">
+    <h2>Quiz de Revisão</h2>
+    <p>20 questões cobrindo involução uterina, lóquios, infecção puerperal (endometrite, mastite), tratamento antibiótico, blues pós-parto, depressão pós-parto e complicações do puerpério.<br><br>Responda cada questão e veja a explicação antes de avançar.</p>
+    <button class="btn-primary" onclick="startQuiz()">Começar Quiz</button>
+  </div>
+  <div id="quizArea" style="display:none;">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+    <div class="progress-label" id="progressLabel">Questão 0 de 20</div>
+    <div class="question-card" id="questionCard">
+      <div class="question-number" id="questionNumber"></div>
+      <div class="question-text" id="questionText"></div>
+      <div class="options" id="optionsContainer"></div>
+      <div class="explanation" id="explanation"></div>
+      <button class="btn-next" id="btnNext" onclick="nextQuestion()">Próxima questão →</button>
+    </div>
+  </div>
+  <div id="resultScreen">
+    <div class="score-circle">
+      <span class="score-num" id="scoreFinal">0</span>
+      <span class="score-denom" id="scoreDenom">de 20</span>
+    </div>
+    <h2 id="resultTitle"></h2>
+    <p id="resultMsg"></p>
+    <div class="stats-row">
+      <div class="stat-box green"><div class="stat-val" id="statCorrect">0</div><div class="stat-lbl">Acertos</div></div>
+      <div class="stat-box red"><div class="stat-val" id="statWrong">0</div><div class="stat-lbl">Erros</div></div>
+      <div class="stat-box blue"><div class="stat-val" id="statPct">0%</div><div class="stat-lbl">Aproveitamento</div></div>
+    </div>
+    <button class="btn-primary" onclick="restartQuiz()">Refazer Quiz</button>
+  </div>
+</div>
+<script>
+const rawQuestions = [
+  {
+    question: "Quando se inicia o puerpério?",
+    options: [
+      "No momento da expulsão da placenta",
+      "Imediatamente após o nascimento do feto",
+      "Com o início das contrações de involução uterina",
+      "Com o primeiro aleitamento materno após o parto"
+    ],
+    correctIndex: 0,
+    explanation: "O puerpério inicia-se no momento em que a placenta é expulsa (após o secundamento — 3º período do parto) e se estende até a recuperação completa do organismo materno, em geral até 6 semanas. É nesse período que ocorrem as manifestações involutivas e de recuperação da genitália materna."
+  },
+  {
+    question: "Segundo a classificação de Rezende, o puerpério imediato corresponde a qual período?",
+    options: [
+      "1º ao 10º dia pós-parto",
+      "Até 2 horas após o parto",
+      "3 horas até o 10º dia",
+      "11º até o 45º dia"
+    ],
+    correctIndex: 0,
+    explanation: "Na classificação de Rezende: Imediato = 1º ao 10º dia; Tardio = 10º ao 45º dia; Remoto = além do 45º dia. Na classificação de Zugaib: Imediato = até 2 horas; Mediato = 3h ao 10º dia; Tardio = 11º dia ao 6–8 semanas; Remoto = além das 6 semanas. O enunciado especifica Rezende — resposta correta é 1º ao 10º dia."
+  },
+  {
+    question: "Em qual altura se encontra o útero no final do 10º dia pós-parto durante a involução normal?",
+    options: [
+      "Na altura da sínfise púbica",
+      "Na altura do umbigo",
+      "Na altura do epigástrio",
+      "O útero já não é mais palpável abdominalmente"
+    ],
+    correctIndex: 0,
+    explanation: "Involução uterina normal: final do 3º dia = útero na altura do umbigo; final do 10º dia = útero na altura da sínfise púbica (pubisite). A involução completa ocorre entre o 10º e o 45º dia (6 semanas). A amamentação acelera a involução pela liberação de ocitocina (por isso as puérperas sentem cólicas ao amamentar)."
+  },
+  {
+    question: "Uma puérpera no 7º dia pós-parto apresenta lóquios de odor fétido e temperatura de 38,5°C. O que essa combinação sugere?",
+    options: [
+      "Infecção puerperal — lóquios com odor fétido (não de sangue) é sinal de infecção",
+      "Evolução normal dos lóquios serossanguíneos sem necessidade de intervenção",
+      "Miotamponagem tardia com retenção de coágulos fisiológica",
+      "Início da lochia flava — odor é esperado nessa transição"
+    ],
+    correctIndex: 0,
+    explanation: "Lóquios com odor fétido (que não seja odor de sangue) é sinal de infecção puerperal. O cheiro normal dos lóquios em todos os estágios deve ser de sangue fresco. A febre reforça a suspeita. Diagnóstico diferencial: endometrite puerperal (tríade de Bumm: útero doloroso + pastoso + hipoinvoluído). Iniciar investigação e antibioticoterapia."
+  },
+  {
+    question: "Qual é o principal fator de risco para infecção puerperal?",
+    options: [
+      "Parto por cesariana",
+      "Ruptura prematura de membranas com mais de 18 horas",
+      "Nuliparidade",
+      "Uso de analgesia peridural durante o trabalho de parto"
+    ],
+    correctIndex: 0,
+    explanation: "O principal fator de risco para infecção puerperal é o parto por cesariana — envolve incisão uterina, maior exposição a microrganismos e maiores chances de hematomas e tecido desvitalizado. A cesariana está associada a taxas de infecção 5–10 vezes maiores que o parto vaginal. Ruptura precoce de membranas e trabalho de parto prolongado também são fatores de risco, mas a cesariana é o principal."
+  },
+  {
+    question: "Qual é a definição de morbidade febril puerperal?",
+    options: [
+      "Temperatura ≥38°C em 2 dias quaisquer nos primeiros 10 dias pós-parto, excluídas as 24 horas iniciais",
+      "Temperatura ≥37,5°C no primeiro dia após o parto",
+      "Qualquer febre acima de 38°C nas primeiras 48 horas pós-parto",
+      "Febre persistente por mais de 5 dias no puerpério tardio"
+    ],
+    correctIndex: 0,
+    explanation: "Morbidade febril puerperal: temperatura ≥38°C em pelo menos 2 dias quaisquer nos primeiros 10 dias do puerpério, excluídas as 24 horas iniciais (o 1º dia pós-parto pode ter febre transitória por absorção de produtos do parto). Podem ser incluídas na morbidade puerperal: tromboflebite, infecção urinária, pulmonar e das mamas."
+  },
+  {
+    question: "A Tríade de Bumm é diagnóstica de qual complicação puerperal?",
+    options: [
+      "Endometrite puerperal: útero doloroso + pastoso + hipoinvoluído",
+      "Tromboflebite séptica: dor em membros inferiores + febre + edema assimétrico",
+      "Mastite puerperal: mama tensa + dolorosa + endurecida unilateral",
+      "Blues pós-parto: tristeza + insônia + choro fácil no 5º dia"
+    ],
+    correctIndex: 0,
+    explanation: "A Tríade de Bumm descreve a endometrite puerperal: útero doloroso + pastoso (amolecido) + hipoinvoluído (maior que o esperado para o dia pós-parto). Associa-se a lóquios purulentos e fétidos, colo entreaberto e febre alta. Nas primeiras 24h, temperatura >38,5°C deve ser tratada como endometrite pelo risco de choque séptico por estreptococo."
+  },
+  {
+    question: "Qual é o esquema antibiótico clássico de primeira linha para o tratamento da endometrite puerperal?",
+    options: [
+      "Clindamicina 600 mg IV a cada 6 horas + Gentamicina 3,5–5 mg/kg IV a cada 24 horas",
+      "Amoxicilina-clavulanato oral por 10 dias ambulatorial",
+      "Metronidazol IV isolado pela cobertura de anaeróbios",
+      "Cefalotina IV + metronidazol oral por 7 dias"
+    ],
+    correctIndex: 0,
+    explanation: "O tratamento clássico da endometrite puerperal é internação + antibioticoterapia IV. Esquema 1: Clindamicina 600 mg IV 6/6h + Gentamicina 3,5–5 mg/kg IV 24/24h. Esquema 2: Ampicilina 1g IV 6/6h + Gentamicina + Metronidazol 500 mg IV 8/8h. A flora polimicrobiana exige cobertura ampla. Alta após afebril por 24–48 horas."
+  },
+  {
+    question: "Quando a paciente com endometrite puerperal pode receber alta hospitalar?",
+    options: [
+      "Após permanecer afebril por pelo menos 24 a 48 horas",
+      "Após 7 dias de antibioticoterapia intravenosa, independente da febre",
+      "Imediatamente após resolução da dor pélvica",
+      "Após 3 dias do início dos antibióticos se não houver piora"
+    ],
+    correctIndex: 0,
+    explanation: "A alta hospitalar na endometrite puerperal é dada quando a paciente permanece afebril por pelo menos 24–48 horas. A duração total do tratamento pode variar, mas o critério de alta não é baseado em dias fixos de ATB, e sim na resposta clínica (apirexia sustentada). Febre após 72h de ATB deve alertar para complicações (abscesso, tromboflebite, resistência bacteriana)."
+  },
+  {
+    question: "Qual complicação infecciosa puerperal indica histerectomia total com anexectomia bilateral?",
+    options: [
+      "Infecção por Clostridium sp. no puerpério",
+      "Endometrite refratária após 5 dias de antibioticoterapia",
+      "Mastite com abscesso mamário bilateral",
+      "Tromboflebite séptica com bacteremia recorrente"
+    ],
+    correctIndex: 0,
+    explanation: "A presença de infecção por Clostridium no puerpério (extremamente grave, com gás nos tecidos, choque precoce e fasciíte) é indicação de histerectomia total com anexectomia bilateral. A peritonite generalizada também pode exigir laparotomia. Tromboflebite séptica responde a heparina + ATB. Mastite com abscesso requer drenagem cirúrgica local, não histerectomia."
+  },
+  {
+    question: "Qual é o tratamento correto para mastite puerperal não complicada?",
+    options: [
+      "Esvaziamento da mama + analgésicos e anti-inflamatórios — SEM inibição da lactação",
+      "Inibição imediata da lactação + antibioticoterapia oral por 7 dias",
+      "Suspensão da amamentação do lado afetado + curativo compressivo",
+      "Internação imediata e drenagem cirúrgica da glândula mamária"
+    ],
+    correctIndex: 0,
+    explanation: "O tratamento inicial da mastite puerperal inclui: hidratação oral, esvaziamento da mama afetada (ordenha manual, mecânica ou elétrica), posicionamento adequado, analgésicos e anti-inflamatórios (paracetamol, ibuprofeno, piroxicam). NÃO há indicação de inibição da lactação — a amamentação deve ser mantida, pois o esvaziamento é fundamental para a resolução. Se houver abscesso formado, drenagem cirúrgica pode ser necessária."
+  },
+  {
+    question: "Quais são os agentes bacterianos mais comuns na mastite puerperal?",
+    options: [
+      "Staphylococcus aureus e Staphylococcus epidermidis",
+      "Escherichia coli e Klebsiella pneumoniae",
+      "Streptococcus pyogenes e Enterococcus faecalis",
+      "Clostridium perfringens e Bacteroides fragilis"
+    ],
+    correctIndex: 0,
+    explanation: "Os agentes mais comuns da mastite puerperal são Staphylococcus aureus e Staphylococcus epidermidis — bactérias da flora cutânea que colonizam o mamilo e entram pelas fissuras. O S. aureus pode produzir toxinas e causar abscessos. Por isso, quando antibiótico é necessário, cobertura para estafilococos (oxacilina, cefalexina) é adequada."
+  },
+  {
+    question: "Em que dia pós-parto o blues pós-parto tipicamente atinge seu pico?",
+    options: [
+      "5º dia pós-parto",
+      "1º dia pós-parto",
+      "14º dia pós-parto",
+      "30º dia pós-parto"
+    ],
+    correctIndex: 0,
+    explanation: "O blues pós-parto é uma condição transitória que tipicamente se desenvolve 2–3 semanas após o parto, com pico no 5º dia (coincide com a descida do leite e queda hormonal abrupta) e resolução espontânea em 2 semanas. É esperado e não requer tratamento farmacológico — distingue-se da depressão pós-parto pela intensidade e duração muito menores."
+  },
+  {
+    question: "Qual é a diferença fundamental entre blues pós-parto e depressão pós-parto?",
+    options: [
+      "Blues é transitório (resolve em 2 semanas), leve e não requer tratamento farmacológico; DPP é episódio depressivo maior nas primeiras 4 semanas, persistente e requer tratamento",
+      "Blues ocorre apenas nas primeiras 24 horas; DPP se manifesta após o 30º dia pós-parto",
+      "Blues afeta apenas primíparas; DPP pode ocorrer em qualquer parturiente",
+      "Blues requer ISRS imediato; DPP responde apenas a psicoterapia sem medicação"
+    ],
+    correctIndex: 0,
+    explanation: "Blues pós-parto: transitório, leve a moderado, pico no 5º dia, resolução em 2 semanas — não requer farmacoterapia. Depressão pós-parto: episódio de depressão MAIOR nas primeiras 4 semanas pós-parto; sintomas intensos (culpa, pensamentos de machucar o bebê, ausência de vínculo, ansiedade grave); requer tratamento com ISRS ou antidepressivos. Primíparas têm maior risco de DPP entre 10–19 dias pós-parto."
+  },
+  {
+    question: "Qual classe de antidepressivos é recomendada como tratamento farmacológico da depressão pós-parto?",
+    options: [
+      "Inibidores seletivos da recaptação de serotonina (ISRS) — fluoxetina, sertralina, paroxetina, citalopram",
+      "Benzodiazepínicos — diazepam ou clonazepam para controle da ansiedade",
+      "Antipsicóticos atípicos isolados — quetiapina ou risperidona",
+      "Lítio como estabilizador de humor de primeira linha"
+    ],
+    correctIndex: 0,
+    explanation: "O tratamento farmacológico da DPP usa ISRS (fluoxetina, sertralina, paroxetina, citalopram) como primeira linha. Também podem ser usados: bupropiona (inibidor da recaptação de dopamina) e antidepressivos tricíclicos (amitriptilina, nortriptilina, imipramina). A sertralina é frequentemente preferida em lactantes por ter menor passagem para o leite materno."
+  },
+  {
+    question: "Uma puérpera de 10 dias refere lóquios serosos amarelados sem odor e o útero não é mais palpável abdominalmente. Essa situação é:",
+    options: [
+      "Normal — lochia flava é esperada após o 10º dia; útero na sínfise é compatível com involução adequada",
+      "Anormal — lochia flava indica infecção subclínica e requer antibiótico",
+      "Anormal — o útero deveria estar na altura do umbigo até o 15º dia",
+      "Normal apenas se a paciente estiver amamentando; sem amamentação seria patológico"
+    ],
+    correctIndex: 0,
+    explanation: "Lochia flava (serosa, amarelada) é o tipo normal de lóquio após o 10º dia pós-parto (pós-parto tardio). O endométrio está inteiramente epitelizado no 25º dia. O útero na altura da sínfise púbica no 10º dia é a involução uterina normal (umbigo no 3º dia → sínfise no 10º dia). Tudo está normal nessa descrição."
+  },
+  {
+    question: "O que pode indicar febre que persiste após 72 horas do início do tratamento antibiótico para endometrite?",
+    options: [
+      "Resistência bacteriana, abscesso pélvico, hematoma ou tromboflebite pélvica séptica",
+      "Evolução esperada — a febre da endometrite pode durar até 5 dias com tratamento correto",
+      "Superdosagem de antibiótico causando febre medicamentosa",
+      "Reinfeção pela flora hospitalar que requer apenas mudança de ATB"
+    ],
+    correctIndex: 0,
+    explanation: "Febre após 72h de ATB em endometrite pode indicar: resistência bacteriana, infecção do sítio cirúrgico, hematoma infectado, celulite pélvica, abscesso intracavitário, tromboflebite pélvica séptica ou reação adversa ao ATB. É necessário reavaliação clínica, exames complementares (hemograma, PCR, hemoculturas) e, eventualmente, imagem (USG, TC) para identificar coleção."
+  },
+  {
+    question: "A tromboflebite séptica puerperal é tratada com:",
+    options: [
+      "Heparina + antibioticoterapia",
+      "Apenas antibioticoterapia de amplo espectro",
+      "Apenas anticoagulação com heparina sem antibiótico",
+      "Embolectomia cirúrgica de urgência"
+    ],
+    correctIndex: 0,
+    explanation: "A tromboflebite séptica puerperal resulta de: estase venosa + baixo fluxo sanguíneo + hipercoagulabilidade (puerpério é estado pró-coagulante) + lesão endotelial. O tratamento combina heparina (anticoagulação para tratar o trombo) + antibioticoterapia (para a infecção). A heparina sozinha ou o ATB sozinho são insuficientes para tratar ambos os componentes."
+  },
+  {
+    question: "Qual é a posição normal do útero no final do 3º dia pós-parto na involução uterina normal?",
+    options: [
+      "Na altura do umbigo",
+      "Na altura da sínfise púbica",
+      "Entre umbigo e sínfise púbica",
+      "No epigástrio (acima do umbigo)"
+    ],
+    correctIndex: 0,
+    explanation: "Involução uterina: no final do 3º dia pós-parto, o útero deve estar na altura do umbigo. No final do 10º dia, deve ter regredido até a sínfise púbica. A regressão completa ocorre entre 10 e 45 dias. A ocitocina liberada durante a amamentação acelera esse processo — por isso as puérperas lactantes sentem cólicas ao amamentar."
+  },
+  {
+    question: "Primíparas têm maior risco de doenças mentais no puerpério em qual período?",
+    options: [
+      "Primeiros 3 meses após o parto, especialmente entre 10–19 dias",
+      "Apenas na primeira semana após o parto",
+      "Apenas após o 45º dia, no puerpério tardio",
+      "O risco é igual entre primíparas e multíparas em todo o puerpério"
+    ],
+    correctIndex: 0,
+    explanation: "Primíparas são particularmente vulneráveis a doenças mentais (depressão unipolar, distúrbio bipolar, esquizofrenia) nos primeiros 3 meses pós-parto, especialmente entre 10 e 19 dias. A interação entre susceptibilidade genética, variações hormonais abruptas e estressores psicossociais (novo papel, privação de sono, perda de autonomia) explica esse aumento de risco."
+  }
+];
+
+function shuffleQuestion(q) {
+  const correctText = q.options[q.correctIndex];
+  const shuffled = [...q.options];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return { ...q, options: shuffled, correctIndex: shuffled.indexOf(correctText) };
+}
+
+let questions = [], current = 0, score = 0;
+
+function startQuiz() {
+  questions = rawQuestions.map(shuffleQuestion).sort(() => Math.random() - 0.5);
+  current = 0; score = 0;
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('resultScreen').style.display = 'none';
+  document.getElementById('quizArea').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[current], total = questions.length;
+  document.getElementById('progressBar').style.width = ((current / total) * 100) + '%';
+  document.getElementById('progressLabel').textContent = `Questão ${current + 1} de ${total}`;
+  document.getElementById('questionNumber').textContent = `Questão ${current + 1}`;
+  document.getElementById('questionText').textContent = q.question;
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  q.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn'; btn.textContent = opt;
+    btn.onclick = () => selectAnswer(idx);
+    container.appendChild(btn);
+  });
+  document.getElementById('explanation').className = 'explanation';
+  document.getElementById('explanation').textContent = '';
+  document.getElementById('btnNext').className = 'btn-next';
+}
+
+function selectAnswer(idx) {
+  const q = questions[current];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+  if (idx === q.correctIndex) { btns[idx].classList.add('correct'); score++; }
+  else { btns[idx].classList.add('wrong'); btns[q.correctIndex].classList.add('correct'); }
+  const exp = document.getElementById('explanation');
+  exp.textContent = q.explanation; exp.className = 'explanation show';
+  document.getElementById('btnNext').className = 'btn-next show';
+  document.getElementById('btnNext').textContent = current + 1 < questions.length ? 'Próxima questão →' : 'Ver resultado';
+}
+
+function nextQuestion() {
+  current++;
+  if (current < questions.length) showQuestion(); else showResult();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  const rs = document.getElementById('resultScreen'); rs.style.display = 'block';
+  const total = questions.length, pct = Math.round((score / total) * 100);
+  document.getElementById('scoreFinal').textContent = score;
+  document.getElementById('scoreDenom').textContent = `de ${total}`;
+  document.getElementById('statCorrect').textContent = score;
+  document.getElementById('statWrong').textContent = total - score;
+  document.getElementById('statPct').textContent = pct + '%';
+  let title, msg;
+  if (pct >= 80) { title = 'Excelente!'; msg = 'Ótimo domínio do conteúdo de Puerpério. Continue assim!'; }
+  else if (pct >= 60) { title = 'Bom resultado!'; msg = 'Você está no caminho certo. Revise os pontos errados no relatório.'; }
+  else { title = 'Continue estudando!'; msg = 'Revise o relatório de Puerpério com atenção antes de refazer o quiz.'; }
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultMsg').textContent = msg;
+}
+
+function restartQuiz() {
+  document.getElementById('resultScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+}
+</script>
+</body>
+</html>
